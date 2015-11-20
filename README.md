@@ -4,6 +4,8 @@ Library to communicate into Odoo and other with Javascript and JSON-RPC.
 
 This Library has no dependency. It's [Vanilla Javascript](http://vanilla-js.com/) !
 
+*All return of the methods are Promise (except setHost method)*
+
 # Installation
 
 ```html
@@ -11,6 +13,21 @@ This Library has no dependency. It's [Vanilla Javascript](http://vanilla-js.com/
 ```
 
 # Usage
+
+## Set the hostname
+
+It's the only method with doesn't return a Promise.
+
+```javascript
+// Without schema and port
+odoo_jsonrpc.setHost('localhost');
+
+// Or with scheme
+odoo_jsonrpc.setHost('https://localhost');
+
+// Or with no standard port
+odoo_jsonrpc.setHost('localhost:8000');
+```
 
 ## Connect into Odoo
 
