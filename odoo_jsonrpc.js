@@ -347,6 +347,14 @@ var odoo_jsonrpc = (function () {
      * @return Promise
      */
     exposed.model.call = function (model, method, args, kwargs) {
+        if (undefined === args) {
+            args = {};
+        }
+
+        if (undefined === kwargs) {
+            kwargs = {};
+        }
+
         params = {
             model: model,
             method: method,
