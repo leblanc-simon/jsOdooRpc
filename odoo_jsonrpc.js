@@ -75,7 +75,7 @@ var odoo_jsonrpc = (function () {
                 request.withCredentials = true;
             }
 
-            request.onreadystatechange  = function (event) {
+            request.onreadystatechange = function () {
                 if (request.readyState === 4) {
                     switch (request.status) {
                         case 200:
@@ -169,6 +169,7 @@ var odoo_jsonrpc = (function () {
 
     /**
      * List all databases availables
+     *
      * @return Promise
      */
     exposed.database.list = function () {
@@ -177,6 +178,7 @@ var odoo_jsonrpc = (function () {
 
     /**
      * Create a new database
+     *
      * @param string name the name of the database to create
      * @param string master_password the master password of odoo (in the config file)
      * @param bool demo populate with demo data or not
@@ -191,7 +193,41 @@ var odoo_jsonrpc = (function () {
                 {name: 'db_name', value: name},
                 {name: 'demo_data', value: demo},
                 {name: 'db_lang', value: language},
-                {name: 'create_admin_pwd', value: admin_password},
+                {name: 'create_admin_pwd', value: admin_password}
+            ]
+        });
+    };
+
+    /**
+     * Create a new database
+     *
+     * @param string source_name the name of the database to duplicate
+     * @param string destination_name the name of the database to create
+     * @param string master_password the master password of odoo (in the config file)
+     * @return Promise
+     */
+    exposed.database.duplicate = function (source_name, destination_name, master_password) {
+        return internal.sendRequest('/web/database/duplicate', {
+            fields: [
+                {name: 'super_admin_pwd', value: master_password},
+                {name: 'db_original_name', value: source_name},
+                {name: 'db_name', value: destination_name}
+            ]
+        });
+    };
+
+    /**
+     * Create a new database
+     *
+     * @param string name the name of the database to drop
+     * @param string master_password the master password of odoo (in the config file)
+     * @return Promise
+     */
+    exposed.database.drop = function (name, master_password) {
+        return internal.sendRequest('/web/database/drop', {
+            fields: [
+                {name: 'drop_pwd', value: master_password},
+                {name: 'drop_db', value: name}
             ]
         });
     };
@@ -222,9 +258,27 @@ var odoo_jsonrpc = (function () {
             fields: [
                 {name: 'old_pwd', value: old_password},
                 {name: 'new_password', value: new_password},
-                {name: 'confirm_pwd', value: new_password},
+                {name: 'confirm_pwd', value: new_password}
             ]
         });
+    };
+
+    /**
+     * Get the list of availables languages
+     *
+     * @return Promise
+     */
+    exposed.session.getLanguages = function () {
+        return internal.sendRequest('/web/session/get_lang_list');
+    };
+
+    /**
+     * Get the list of availables modules
+     *
+     * @return Promise
+     */
+    exposed.session.getModules = function () {
+        return internal.sendRequest('/web/session/modules');
     };
 
     ///////////////////////////////////////////////////////////////////////////
@@ -246,10 +300,41 @@ var odoo_jsonrpc = (function () {
         params = {
             model: model,
             domain: domain,
-            fields: fields,
+            fields: fields
         };
 
         return internal.sendRequest('/web/dataset/search_read', params);
+    };
+
+    /**
+     * Find a record into a model by id
+     *
+     * @param string model the odoo model where the search must be processed
+     * @param int id the id search
+     * @param array fields the fields to read
+     * @return Promise
+     */
+    exposed.model.find = function (model, id, fields) {
+        return new Promise(function (resolve, reject) {
+            var domain = [['id', '=', id]];
+            if (undefined === fields) {
+                fields = [];
+            }
+
+            exposed.model.searchRead(model, domain, fields).then(
+                function (result) {
+                    if (0 === result.length) {
+                        reject(Error('No result found'));
+                        return;
+                    }
+
+                    resolve(result.records[0]);
+                },
+                function (error) {
+                    reject(error);
+                }
+            );
+        });
     };
 
     /**
@@ -266,10 +351,44 @@ var odoo_jsonrpc = (function () {
             model: model,
             method: method,
             args: args,
-            kwargs: kwargs,
+            kwargs: kwargs
         };
 
         return internal.sendRequest('/web/dataset/call_kw', params);
+    };
+
+    /**
+     * Create a new record in Odoo
+     *
+     * @param string model the odoo model where the record must be inserted
+     * @param array datas the datas to insert
+     * @return Promise
+     */
+    exposed.model.create = function (model, datas) {
+        return exposed.model.call(model, 'create', [datas]);
+    };
+
+    /**
+     * Update a record in Odoo
+     *
+     * @param string model the odoo model where the record must be updated
+     * @param int id the id to update
+     * @param array datas the datas to insert
+     * @return Promise
+     */
+    exposed.model.write = function (model, id, datas) {
+        return exposed.model.call(model, 'write', [id, datas]);
+    };
+
+    /**
+     * Delete a record in Odoo
+     *
+     * @param string model the odoo model where the record must be deleted
+     * @param int id the id to deleted
+     * @return Promise
+     */
+    exposed.model.remove = function (model, id) {
+        return exposed.model.call(model, 'unlink', [id]);
     };
 
     return exposed;
