@@ -396,7 +396,7 @@ var odoo_jsonrpc = (function () {
      * @return Promise
      */
     exposed.model.remove = function (model, id) {
-        return exposed.model.call(model, 'unlink', [id]);
+        return exposed.model.call(model, 'unlink', [[id]]);
     };
 
     return exposed;
